@@ -12,6 +12,7 @@ if __name__ == '__build__':
 import sys
 import math
 import random
+import time
 from math import cos as cos
 from math import sin as sin
 from math import pi as PI
@@ -47,18 +48,22 @@ last_time = 0
 
 
 class Particle:
-    def __init__(self, x, y, partOfWorm, isHead=False):
+    def __init__(self, x, y, partOfWorm, isHead=False, isEnd = False):
         self.x = x
         self.y = y
-        self.vx = 0.0
-        self.vy = 0.0
+        self.vx = 0
+        self.vy = 0
         self.px = x
         self.py = y
+        self.moveX = 0
+        self.moveY = 0
         self.inv_mass = 1.0
         #Lets us know if the particle is in the worm
         self.partOfWorm = partOfWorm
         #Lets us know if this the front of worm(only front is draggable)
         self.isHead = isHead
+        self.isEnd = isEnd
+            
 
 
 class Constraint:
@@ -73,7 +78,7 @@ class Constraint:
 #Starting with a very small worm
 particles = [Particle(0.0, 0.0, True, True),
              Particle(2.5, 0.5, True),
-             Particle(5.0, 1.0, True)
+             Particle(5.0, 1.0, True, False, True)
              ]
 
 
@@ -135,16 +140,32 @@ def distance(x1, y1, x2, y2):
     return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
 
 
+def consume(otherParticle):
+    otherParticle.partOfWorm = True
+    
+
+
+
 def distance_constraint(particle1, particle2, constraint_distance):
     correction_x1 = 0.0
     correction_y1 = 0.0
     correction_x2 = 0.0
     correction_y2 = 0.0
 
-    if not particle1.partOfWorm or not particle2.partOfWorm:
-        return (correction_x1, correction_y1, correction_x2, correction_y2)
+    #consume a particle if its not part of the worm
+    if particle1.isHead and not particle2.partOfWorm:
+        print("here")
+        if distance(particle1.x, particle1.y, particle2.x, particle2.y) > particle_radii*2 + 0.1:
+            print("here")
+            consume(particle2)
 
-    
+
+    if not particle1.partOfWorm or not particle2.partOfWorm:
+        return particle1.moveX, particle1.moveY, particle2.moveX, particle2.moveY
+
+
+
+
     #helpers for us, simple calculations we need
     xDiff = particle1.x - particle2.x
     yDiff = particle1.y - particle2.y
@@ -183,36 +204,33 @@ def generate_particle():
     global distance_constraints
     global particle_radii
     particle_radii
-    
+
     if not timer():
         return
 
     ## Generate a particle somewhere randomly
-    particles.append(Particle(random.randint(-10, 10), random.randint(-10, 10), False))
+    particles.append(Particle(random.randint(-15, 15), random.randint(-15, 15), False, False))
     #want particle distance to be radii * 2
     distance_constraints.append(Constraint(particle_counter, particle_counter+1, particle_radii*2.5))
     #update the number of particles
     particle_counter+=1
 
-
+#Only want to generate a particle every couple of seconds, this helper function returns true if time difference is more than 3 seconds
 def timer():
-    global Fextx,last_time
-    current_time = glfw.get_time()
-    delta_time = current_time - last_time
-    #last_time = current_time
-    if(delta_time > 2):
-        last_time=current_time
+    global last_time
+    current_time = time.time()
+    delta = current_time - last_time
+    if(delta > 3):
+        last_time = current_time
         return True
     else:
         return False
- 
-generate_particle()
-generate_particle()
-generate_particle()
+
 
 def pbd_main_loop():
     global particles
     gravity = 0.0
+    generate_particle()
     for particle in particles:
         # apply external forces - line 5
         particle.vx += 0.0
