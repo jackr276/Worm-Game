@@ -1,6 +1,6 @@
 """
 Jack Robbins and Randall Tarazona
-PBD Homework Part 1
+PBD Recreation of Game Worm.io
 """
 
 #!/usr/bin/python
@@ -11,6 +11,7 @@ if __name__ == '__build__':
 
 import sys
 import math
+import random
 from math import cos as cos
 from math import sin as sin
 from math import pi as PI
@@ -27,8 +28,8 @@ ERROR: PyOpenGL not installed properly.
         ''')
     sys.exit()
 
-screen_dimx = 550
-screen_dimy = 550
+screen_dimx = 900
+screen_dimy = 900
 screen_leftx = -15
 screen_rightx = 15
 screen_topy = -15
@@ -41,10 +42,11 @@ particle_radii = 0.5
 dragged_particle = None
 is_dragging = False
 particle_distance = 2.5
+particle_counter = 2
 
 
 class Particle:
-    def __init__(self, x, y):
+    def __init__(self, x, y, partOfWorm, isHead=False):
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -52,6 +54,10 @@ class Particle:
         self.px = x
         self.py = y
         self.inv_mass = 1.0
+        #Lets us know if the particle is in the worm
+        self.partOfWorm = partOfWorm
+        #Lets us know if this the front of worm(only front is draggable)
+        self.isHead = isHead
 
 
 class Constraint:
@@ -63,21 +69,15 @@ class Constraint:
         self.stiffness = 0.025
 
 
-particles = [Particle(0.0, 0.0),
-             Particle(2.5, 0.5),
-             Particle(5.0, 1.0),
-             Particle(7.5, 1.5),
-             Particle(10.0, 2.0)
+#Starting with a very small worm
+particles = [Particle(0.0, 0.0, True, True),
+             Particle(2.5, 0.5, True),
+             Particle(5.0, 1.0, True)
              ]
 
 
 distance_constraints = [Constraint(0, 1, particle_distance),
-                        Constraint(1, 2, particle_distance),
-                        Constraint(2, 3, particle_distance),
-                        Constraint(3, 4, particle_distance),
-                        Constraint(0, 2, 2 * particle_distance),
-                        Constraint(1, 3, 2 * particle_distance),
-                        Constraint(2, 4, 2 * particle_distance)
+                        Constraint(1, 2, particle_distance)
                         ]
 
 
@@ -93,10 +93,13 @@ def draw_circle_outline(r, x, y):
 
 
 def draw_rope():
+    #Adjust thickness so it appears worm-like
+    glLineWidth(30)
     glBegin(GL_LINES)
     for i in range(len(particles) - 1):
-        glVertex2f(particles[i].x, particles[i].y)
-        glVertex2f(particles[i + 1].x, particles[i + 1].y)
+        if(particles[i].partOfWorm and particles[i+1].partOfWorm):
+            glVertex2f(particles[i].x, particles[i].y)
+            glVertex2f(particles[i + 1].x, particles[i + 1].y)
     glEnd()
 
 
@@ -137,6 +140,10 @@ def distance_constraint(particle1, particle2, constraint_distance):
     correction_x2 = 0.0
     correction_y2 = 0.0
 
+    if not particle1.partOfWorm or not particle2.partOfWorm:
+        return (correction_x1, correction_y1, correction_x2, correction_y2)
+
+    
     #helpers for us, simple calculations we need
     xDiff = particle1.x - particle2.x
     yDiff = particle1.y - particle2.y
@@ -167,6 +174,25 @@ def distance_constraint(particle1, particle2, constraint_distance):
 
     return (correction_x1, correction_y1, correction_x2, correction_y2)
 
+
+#Randomly generates a particle(essentially the food for the worm)
+def generate_particle():
+    global particle_counter
+    global particles
+    global distance_constraints
+    global particle_radii
+    particle_radii
+    ## Generate a particle somewhere randomly
+    particles.append(Particle(random.randint(-10, 10), random.randint(-10, 10), False))
+    #want particle distance to be radii * 2
+    distance_constraints.append(Constraint(particle_counter, particle_counter+1, particle_radii*2.5))
+    #update the number of particles
+    particle_counter+=1
+
+ 
+generate_particle()
+generate_particle()
+generate_particle()
 
 def pbd_main_loop():
     global particles
@@ -230,7 +256,8 @@ def mouse_button_callback(window, button, action, mods):
     worldx,worldy = translate_to_world_coords(x,y)
     particle = particle_clicked(worldx, worldy)
     dragged_particle = particle
-    if button == 0 and dragged_particle is not None:
+    #Only the head can be dragged, so check accordingly
+    if button == 0 and dragged_particle is not None and dragged_particle.isHead:  
         is_dragging = not is_dragging
         dragged_particle.inv_mass = 1.0
     if button == 1 and not is_dragging:
