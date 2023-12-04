@@ -43,6 +43,7 @@ dragged_particle = None
 is_dragging = False
 particle_distance = 2.5
 particle_counter = 2
+last_time = 0
 
 
 class Particle:
@@ -182,6 +183,10 @@ def generate_particle():
     global distance_constraints
     global particle_radii
     particle_radii
+    
+    if not timer():
+        return
+
     ## Generate a particle somewhere randomly
     particles.append(Particle(random.randint(-10, 10), random.randint(-10, 10), False))
     #want particle distance to be radii * 2
@@ -189,6 +194,17 @@ def generate_particle():
     #update the number of particles
     particle_counter+=1
 
+
+def timer():
+    global Fextx,last_time
+    current_time = glfw.get_time()
+    delta_time = current_time - last_time
+    #last_time = current_time
+    if(delta_time > 2):
+        last_time=current_time
+        return True
+    else:
+        return False
  
 generate_particle()
 generate_particle()
