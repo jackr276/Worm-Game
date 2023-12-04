@@ -3,6 +3,17 @@ Jack Robbins and Randall Tarazona
 PBD Recreation of Game Worm.io
 """
 
+"""
+TODO Checklist
+Make the randomly generated particles move somehow
+change colors, make look more natural
+make the worm less jittery when moving
+add some victory/defeat condition
+**make worm addition less jarring, currently very jittery**
+"""
+
+
+
 #!/usr/bin/python
 
 # This is statement is required by the build system to query build info
@@ -43,12 +54,13 @@ particle_radii = 0.5
 dragged_particle = None
 is_dragging = False
 particle_distance = 2.5
-particle_counter = 2
+nextId = 3
 last_time = 0
 
 
 class Particle:
-    def __init__(self, x, y, partOfWorm, isHead=False, isEnd = False):
+    def __init__(self, pid, x, y, partOfWorm, isHead=False, isEnd = False):
+        self.pid = pid
         self.x = x
         self.y = y
         self.vx = 0
@@ -72,25 +84,20 @@ class Constraint:
         self.id2 = id2
         self.distance = distance
         #increased stiffness(looks a little better when less stiff)
-        self.stiffness = 0.025
+        self.stiffness = 0.09
 
 """
 We will need to make dictionaries for all of these
-TODO give every particle ID's, rework entire system, add collision contstraint function from the other hw
 """
 
-wormParticles = [Particle(0.0, 0.0, True, True),
-                Particle(2.5, 0.5, True),
-                Particle(5.0, 1.0, True, False, True)]
-
-worm_constraints = [Constraint(0, 1, particle_distance),
-                        Constraint(1, 2, particle_distance)]
-
-
 #Starting with a very small worm
-particles = [Particle(7.0, 6.0, False)
-            ]
+particles = {0 : Particle(0, 0.0, 0.0, True, True),
+             1 : Particle(1, 2.5, 0.5, True),
+             2: Particle(2, 5.0, 1.0, True, False, True)
+            }
 
+#ID of every particle in the worm
+wormIDs = [0, 1, 2]
 
 distance_constraints = [Constraint(0, 1, particle_distance),
                         Constraint(1, 2, particle_distance)
@@ -112,10 +119,10 @@ def draw_rope():
     #Adjust thickness so it appears worm-like
     glLineWidth(30)
     glBegin(GL_LINES)
-    for i in range(len(particles) - 1):
-        if(particles[i].partOfWorm and particles[i+1].partOfWorm):
-            glVertex2f(particles[i].x, particles[i].y)
-            glVertex2f(particles[i + 1].x, particles[i + 1].y)
+    for i in range(len(wormIDs)-1):
+        glVertex2f(particles[wormIDs[i]].x, particles[wormIDs[i]].y)
+        glVertex2f(particles[wormIDs[i+1]].x, particles[wormIDs[i+1]].y)
+           
     glEnd()
 
 
@@ -135,7 +142,7 @@ def drawParticles():
     global dragged_particle
     global particles
     glColor3f(1.0, 1.0, 1.0)
-    for particle in particles:
+    for particle in particles.values():
         draw_circle(particle_radii, particle.x, particle.y)
     draw_rope()
     glColor3f(1.0, 0.0, 0.0)
@@ -151,8 +158,80 @@ def distance(x1, y1, x2, y2):
 
 
 def consume(otherParticle):
+    global wormIDs
+    global particle_distance
     otherParticle.partOfWorm = True
+    otherParticle.isTail = True
+
+    if otherParticle.pid in wormIDs:
+        return
+
+    wormIDs.append(otherParticle.pid)
+    distance_constraints.append(Constraint(wormIDs[-2], wormIDs[-1], particle_distance))
+
+    #Print out current score
+    print("Your current score is: " + str(len(wormIDs) - 3))
     
+
+def collision_constraint(particle1, particle2):
+    global particle_radii
+    correction_x1 = 0.0
+    correction_y1 = 0.0
+    correction_x2 = 0.0
+    correction_y2 = 0.0
+
+    desiredDistance = particle_radii * 2
+
+    particleDist = distance(particle1.x, particle1.y, particle2.x, particle2.y)
+
+    #if particle1 is particle2, don't do any collision checking
+    if particleDist == 0:
+        return (correction_x1,correction_y1, correction_x2,correction_y2)
+
+    #if our distance is less than radius*2, we have a collision
+    if particleDist < desiredDistance-0.001:
+        if particle1.isHead:
+            consume(particle2)
+            return correction_x1, correction_y1, correction_x2, correction_y2
+        
+
+    #helpers for us, simple calculations we need
+        xDiff = particle1.x - particle2.x
+        yDiff = particle1.y - particle2.y
+
+        absXDiff = abs(xDiff)
+        absYDiff = abs(yDiff)
+
+        #normal vector tells us direction of correction
+        normalVecX = xDiff / particleDist
+        normalVecY = yDiff / particleDist 
+
+        #Corrections weighted according to inverse masses
+        p1InvMassCalc =  -1*(particle1.inv_mass)/(particle1.inv_mass + particle2.inv_mass)
+        p2InvMassCalc = (particle2.inv_mass)/(particle1.inv_mass + particle2.inv_mass)
+
+        # constraint is how far we must adjust
+        constraint = particleDist - desiredDistance - 0.001
+
+        #apply correction factors
+        correction_x1 = p1InvMassCalc * constraint * normalVecX
+        correction_x2 = p2InvMassCalc * constraint * normalVecX
+
+        correction_y1 = p1InvMassCalc * constraint * normalVecY
+        correction_y2 = p2InvMassCalc * constraint * normalVecY
+
+    return (correction_x1,correction_y1,
+            correction_x2,correction_y2)
+
+def resolve_collision_constraints():
+	for p1 in particles.values():
+		for p2 in particles.values():
+			delta_x1, delta_y1, delta_x2, delta_y2 = collision_constraint(p1,p2)
+			p1.px +=  delta_x1
+			p1.py +=  delta_y1
+			p2.px +=  delta_x2
+			p2.py +=  delta_y2
+
 
 
 
@@ -161,6 +240,10 @@ def distance_constraint(particle1, particle2, constraint_distance):
     correction_y1 = 0.0
     correction_x2 = 0.0
     correction_y2 = 0.0
+
+    #If they're not in the worm, they don't need to be moved
+    if not particle1.partOfWorm and not particle2.partOfWorm:
+        return correction_x1, correction_y1, correction_x2, correction_y2
 
     #helpers for us, simple calculations we need
     xDiff = particle1.x - particle2.x
@@ -171,6 +254,9 @@ def distance_constraint(particle1, particle2, constraint_distance):
 
     #calculate particle distance(|p1-p2| from the paper)
     particleDist = math.sqrt(xDiff * xDiff + yDiff * yDiff)
+
+    if xDiff == 0 or yDiff == 0:
+        return correction_x1, correction_y1, correction_x2, correction_y2
 
     #calculate normal x and y vectors
     normalVecX = xDiff / particleDist
@@ -195,7 +281,7 @@ def distance_constraint(particle1, particle2, constraint_distance):
 
 #Randomly generates a particle(essentially the food for the worm)
 def generate_particle():
-    global particle_counter
+    global nextId
     global particles
     global distance_constraints
     global particle_radii
@@ -205,11 +291,8 @@ def generate_particle():
         return
 
     ## Generate a particle somewhere randomly
-    particles.append(Particle(random.randint(-15, 15), random.randint(-15, 15), False, False))
-    #want particle distance to be radii * 2
-    distance_constraints.append(Constraint(particle_counter, particle_counter+1, particle_radii*2.5))
-    #update the number of particles
-    particle_counter+=1
+    particles[nextId] = Particle(nextId, random.randint(-15, 15), random.randint(-15, 15), False, False)
+    nextId += 1
 
 #Only want to generate a particle every couple of seconds, this helper function returns true if time difference is more than 3 seconds
 def timer():
@@ -227,7 +310,7 @@ def pbd_main_loop():
     global particles
     gravity = 0.0
     generate_particle()
-    for particle in particles:
+    for particle in particles.values():
         # apply external forces - line 5
         particle.vx += 0.0
         particle.vy += gravity * time_delta
@@ -237,6 +320,10 @@ def pbd_main_loop():
         # get initial projected positions - line 7
         particle.px = particle.x + particle.vx * time_delta
         particle.py = particle.y + particle.vy * time_delta
+
+    #line 8, resolve collisions
+    resolve_collision_constraints()
+    
     # line 9
     i = 1
     while i < 4:
@@ -251,7 +338,7 @@ def pbd_main_loop():
             particles[constraint.id2].py += stiffness * delta_y2
         i += 1
     # line 12
-    for particle in particles:
+    for particle in particles.values():
         # line 13
         particle.vx = (particle.px - particle.x) / time_delta
         particle.vy = (particle.py - particle.y) / time_delta
@@ -269,7 +356,7 @@ def display():
 
 def particle_clicked(x, y):
     res = None
-    for particle in particles:
+    for particle in particles.values():
         if distance(x, y, particle.x, particle.y) <= particle_radii:
             return particle
     return res
