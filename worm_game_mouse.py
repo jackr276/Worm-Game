@@ -74,12 +74,22 @@ class Constraint:
         #increased stiffness(looks a little better when less stiff)
         self.stiffness = 0.025
 
+"""
+We will need to make dictionaries for all of these
+TODO give every particle ID's, rework entire system, add collision contstraint function from the other hw
+"""
+
+wormParticles = [Particle(0.0, 0.0, True, True),
+                Particle(2.5, 0.5, True),
+                Particle(5.0, 1.0, True, False, True)]
+
+worm_constraints = [Constraint(0, 1, particle_distance),
+                        Constraint(1, 2, particle_distance)]
+
 
 #Starting with a very small worm
-particles = [Particle(0.0, 0.0, True, True),
-             Particle(2.5, 0.5, True),
-             Particle(5.0, 1.0, True, False, True)
-             ]
+particles = [Particle(7.0, 6.0, False)
+            ]
 
 
 distance_constraints = [Constraint(0, 1, particle_distance),
@@ -151,20 +161,6 @@ def distance_constraint(particle1, particle2, constraint_distance):
     correction_y1 = 0.0
     correction_x2 = 0.0
     correction_y2 = 0.0
-
-    #consume a particle if its not part of the worm
-    if particle1.isHead and not particle2.partOfWorm:
-        print("here")
-        if distance(particle1.x, particle1.y, particle2.x, particle2.y) > particle_radii*2 + 0.1:
-            print("here")
-            consume(particle2)
-
-
-    if not particle1.partOfWorm or not particle2.partOfWorm:
-        return particle1.moveX, particle1.moveY, particle2.moveX, particle2.moveY
-
-
-
 
     #helpers for us, simple calculations we need
     xDiff = particle1.x - particle2.x
