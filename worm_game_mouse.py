@@ -51,7 +51,7 @@ time_delta = 1 / 64.
 particle_radii = 0.2
 dragged_particle = None
 is_dragging = False
-particle_distance = 2.5
+particle_distance = 1
 nextId = 3
 last_time = 0
 
@@ -91,8 +91,8 @@ We will need to make dictionaries for all of these
 
 #Starting with a very small worm
 particles = {0 : Particle(0, 0.0, 0.0, True, True),
-             1 : Particle(1, 2.5, 0.5, True),
-             2: Particle(2, 5.0, 1.0, True, False, True)
+             1 : Particle(1, 1, 0.5, True),
+             2: Particle(2, 2, 1.0, True, False, True)
             }
 
 #ID of every particle in the worm
