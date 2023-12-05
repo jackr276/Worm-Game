@@ -6,9 +6,7 @@ PBD Recreation of Game Worm.io
 """
 TODO Checklist
 Make the randomly generated particles move somehow
-change colors, make look more natural
 make the worm less jittery when moving
-add some victory/defeat condition
 **make worm addition less jarring, currently very jittery**
 """
 
@@ -86,6 +84,7 @@ class Constraint:
         #increased stiffness(looks a little better when less stiff)
         self.stiffness = 0.09
 
+
 """
 We will need to make dictionaries for all of these
 """
@@ -150,7 +149,7 @@ def drawParticles():
         draw_circle(particle_radii, particle.x, particle.y)
     
     glColor3f(0.39, 0.27, 0.13)
-    
+
     draw_rope()
     glColor3f(1.0, 0.0, 0.0)
     if dragged_particle is not None:
@@ -164,6 +163,7 @@ def distance(x1, y1, x2, y2):
     return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
 
 
+# This will be called when the worm "eats" a particle
 def consume(otherParticle):
     global wormIDs
     global particle_distance
@@ -201,8 +201,15 @@ def collision_constraint(particle1, particle2):
             consume(particle2)
             return correction_x1, correction_y1, correction_x2, correction_y2
         
+        #loss condition
+        if particle1.partOfWorm and not particle2.partOfWorm or not particle1.partOfWorm and particle2.partOfWorm:
+            print("Worm Body Collision! Game Over")
+            print("Your final score is: " + str(len(wormIDs) - 3))
+            time.sleep(5)
+            glfw.terminate()
+            exit()
 
-    #helpers for us, simple calculations we need
+        #helpers for us, simple calculations we need
         xDiff = particle1.x - particle2.x
         yDiff = particle1.y - particle2.y
 
@@ -298,6 +305,8 @@ def generate_particle():
 
     ## Generate a particle somewhere randomly
     particles[nextId] = Particle(nextId, random.randint(-15, 15), random.randint(-15, 15), False, False)
+    particles[nextId].vx = random.uniform(-3.0, 3.0)
+    particles[nextId].vy = random.uniform(-3.0, 3.0)
     nextId += 1
 
 
@@ -306,7 +315,7 @@ def timer():
     global last_time
     current_time = time.time()
     delta = current_time - last_time
-    if(delta > 3):
+    if(delta > 2):
         last_time = current_time
         return True
     else:
@@ -356,7 +365,7 @@ def pbd_main_loop():
 
 
 def display():
-    #make background color3D
+    #make background color green
     glClearColor(0.0, 0.2, 0.13, 0.9)
     glClear(GL_COLOR_BUFFER_BIT)
     drawParticles()
@@ -376,6 +385,7 @@ def translate_to_world_coords(screenx, screeny):
     y=  (screeny-screen_dimy/2)/screen_dimy* screen_world_height
     return (x, y)
 
+
 def mouse_button_callback(window, button, action, mods):
     global dragged_particle, is_dragging
     x, y = glfw.get_cursor_pos(window)
@@ -388,6 +398,7 @@ def mouse_button_callback(window, button, action, mods):
         dragged_particle.inv_mass = 1.0
     if button == 1 and not is_dragging:
         dragged_particle = None
+
 
 def cursor_position_callback(window,x,y ):
     global dragged_particle, is_dragging
@@ -405,24 +416,29 @@ def cursor_position_callback(window,x,y ):
 if not glfw.init():
     exit()
 
+
 # Create a windowed mode window and its OpenGL context
 window = glfw.create_window(screen_dimx, screen_dimy, "Worm Simulation", None, None)
 if not window:
     glfw.terminate()
     exit()
 
+
 # Make the window's context current
 glfw.make_context_current(window)
+
 
 # Set callbacks
 glfw.set_mouse_button_callback(window, mouse_button_callback)
 #glutPassiveMotionFunc(mousePassive)
 glfw.set_cursor_pos_callback(window, cursor_position_callback)
 
+
 gluOrtho2D(screen_leftx,
             screen_rightx,
             screen_bottomy,
             screen_topy)
+
 
 # Main loop
 while not glfw.window_should_close(window):
