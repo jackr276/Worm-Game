@@ -40,8 +40,8 @@ ERROR: PyOpenGL not installed properly.
         ''')
     sys.exit()
 
-screen_dimx = 900
-screen_dimy = 900
+screen_dimx = 1080
+screen_dimy = 1080
 screen_leftx = -15
 screen_rightx = 15
 screen_topy = -15
@@ -50,7 +50,7 @@ screen_world_width = screen_rightx-screen_leftx
 screen_world_height = screen_bottomy-screen_topy
 
 time_delta = 1 / 64.
-particle_radii = 0.5
+particle_radii = 0.2
 dragged_particle = None
 is_dragging = False
 particle_distance = 2.5
@@ -141,9 +141,16 @@ def draw_circle(r, x, y):
 def drawParticles():
     global dragged_particle
     global particles
-    glColor3f(1.0, 1.0, 1.0)
     for particle in particles.values():
+        if particle.partOfWorm:
+            glColor3f(0.39, 0.27, 0.13)
+        else:
+            glColor3f(0.99, 0.97, 0.9)
+
         draw_circle(particle_radii, particle.x, particle.y)
+    
+    glColor3f(0.39, 0.27, 0.13)
+    
     draw_rope()
     glColor3f(1.0, 0.0, 0.0)
     if dragged_particle is not None:
@@ -223,6 +230,7 @@ def collision_constraint(particle1, particle2):
     return (correction_x1,correction_y1,
             correction_x2,correction_y2)
 
+
 def resolve_collision_constraints():
 	for p1 in particles.values():
 		for p2 in particles.values():
@@ -231,8 +239,6 @@ def resolve_collision_constraints():
 			p1.py +=  delta_y1
 			p2.px +=  delta_x2
 			p2.py +=  delta_y2
-
-
 
 
 def distance_constraint(particle1, particle2, constraint_distance):
@@ -294,6 +300,7 @@ def generate_particle():
     particles[nextId] = Particle(nextId, random.randint(-15, 15), random.randint(-15, 15), False, False)
     nextId += 1
 
+
 #Only want to generate a particle every couple of seconds, this helper function returns true if time difference is more than 3 seconds
 def timer():
     global last_time
@@ -349,6 +356,8 @@ def pbd_main_loop():
 
 
 def display():
+    #make background color3D
+    glClearColor(0.0, 0.2, 0.13, 0.9)
     glClear(GL_COLOR_BUFFER_BIT)
     drawParticles()
     glFlush()
@@ -392,7 +401,6 @@ def cursor_position_callback(window,x,y ):
                 dragged_particle.inv_mass = 0
 
 
-
 # Initialize the library
 if not glfw.init():
     exit()
@@ -409,7 +417,7 @@ glfw.make_context_current(window)
 # Set callbacks
 glfw.set_mouse_button_callback(window, mouse_button_callback)
 #glutPassiveMotionFunc(mousePassive)
-glfw.set_cursor_pos_callback(window, cursor_position_callback);
+glfw.set_cursor_pos_callback(window, cursor_position_callback)
 
 gluOrtho2D(screen_leftx,
             screen_rightx,
