@@ -36,8 +36,8 @@ ERROR: PyOpenGL not installed properly.
         ''')
     sys.exit()
 
-screen_dimx = 1080
-screen_dimy = 1080
+screen_dimx = 850
+screen_dimy = 850
 screen_leftx = -15
 screen_rightx = 15
 screen_topy = -15
