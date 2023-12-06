@@ -5,8 +5,6 @@ PBD Recreation of Game Worm.io
 
 """
 TODO Checklist
-Make the randomly generated particles move somehow
-make the worm less jittery when moving
 **make worm addition less jarring, currently very jittery**
 """
 
@@ -172,6 +170,13 @@ def consume(otherParticle):
 
     if otherParticle.pid in wormIDs:
         return
+
+    #the previous worm tail before we add the next one
+    previous_tail = particles[wormIDs[-1]]
+
+    #just an idea, currently not in use
+    desired_x = math.sqrt(particle_distance*particle_distance - 0.16) + previous_tail.x
+    desired_y = math.sqrt(particle_distance*particle_distance - 0.16) + previous_tail.y
 
     wormIDs.append(otherParticle.pid)
     distance_constraints.append(Constraint(wormIDs[-2], wormIDs[-1], particle_distance))
