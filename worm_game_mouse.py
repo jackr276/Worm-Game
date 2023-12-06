@@ -80,7 +80,7 @@ class Constraint:
         self.id2 = id2
         self.distance = distance
         #increased stiffness(looks a little better when less stiff)
-        self.stiffness = 0.09
+        self.stiffness = 0.12
 
 
 """
@@ -142,7 +142,7 @@ def drawParticles():
         if particle.partOfWorm:
             glColor3f(0.39, 0.27, 0.13)
         else:
-            glColor3f(0.99, 0.97, 0.9)
+            glColor3f(0.90, 0.7, 0.4)
 
         draw_circle(particle_radii, particle.x, particle.y)
     
@@ -150,7 +150,7 @@ def drawParticles():
 
     draw_rope()
     glColor3f(1.0, 0.0, 0.0)
-    if dragged_particle is not None:
+    if dragged_particle is not None and dragged_particle.isHead:
         draw_circle_outline(
             particle_radii,
             dragged_particle.x,
@@ -210,7 +210,7 @@ def collision_constraint(particle1, particle2):
         if particle1.partOfWorm and not particle2.partOfWorm or not particle1.partOfWorm and particle2.partOfWorm:
             print("Worm Body Collision! Game Over")
             print("Your final score is: " + str(len(wormIDs) - 3))
-            time.sleep(5)
+            time.sleep(1)
             glfw.terminate()
             exit()
 
@@ -310,8 +310,8 @@ def generate_particle():
 
     ## Generate a particle somewhere randomly
     particles[nextId] = Particle(nextId, random.randint(-15, 15), random.randint(-15, 15), False, False)
-    particles[nextId].vx = random.uniform(-3.0, 3.0)
-    particles[nextId].vy = random.uniform(-3.0, 3.0)
+    particles[nextId].vx = random.uniform(-8.0, 8.0)
+    particles[nextId].vy = random.uniform(-8.0, 8.0)
     nextId += 1
 
 
@@ -320,7 +320,8 @@ def timer():
     global last_time
     current_time = time.time()
     delta = current_time - last_time
-    if(delta > 2):
+    #accelerates as you add more to the worm
+    if(delta > 25/len(wormIDs)):
         last_time = current_time
         return True
     else:
