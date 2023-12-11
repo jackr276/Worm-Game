@@ -8,8 +8,6 @@ TODO Checklist
 **make worm addition less jarring, currently very jittery**
 """
 
-
-
 #!/usr/bin/python
 
 # This is statement is required by the build system to query build info
@@ -36,6 +34,7 @@ ERROR: PyOpenGL not installed properly.
         ''')
     sys.exit()
 
+
 screen_dimx = 850
 screen_dimy = 850
 screen_leftx = -15
@@ -44,6 +43,7 @@ screen_topy = -15
 screen_bottomy = 15
 screen_world_width = screen_rightx-screen_leftx
 screen_world_height = screen_bottomy-screen_topy
+
 
 time_delta = 1 / 64.
 particle_radii = 0.2
@@ -82,10 +82,6 @@ class Constraint:
         #increased stiffness(looks a little better when less stiff)
         self.stiffness = 0.12
 
-
-"""
-We will need to make dictionaries for all of these
-"""
 
 #Starting with a very small worm
 particles = {0 : Particle(0, 0.0, 0.0, True, True),
@@ -178,7 +174,10 @@ def consume(otherParticle):
     desired_x = math.sqrt(particle_distance*particle_distance - 0.16) + previous_tail.x
     desired_y = math.sqrt(particle_distance*particle_distance - 0.16) + previous_tail.y
 
+
     wormIDs.append(otherParticle.pid)
+
+
     distance_constraints.append(Constraint(wormIDs[-2], wormIDs[-1], particle_distance))
 
     #Print out current score
@@ -424,7 +423,7 @@ if not glfw.init():
 
 
 # Create a windowed mode window and its OpenGL context
-window = glfw.create_window(screen_dimx, screen_dimy, "Worm Simulation", None, None)
+window = glfw.create_window(screen_dimx, screen_dimy, "Worm Game", None, None)
 if not window:
     glfw.terminate()
     exit()
