@@ -3,11 +3,6 @@ Jack Robbins and Randall Tarazona
 PBD Recreation of Game Worm.io
 """
 
-"""
-TODO Checklist
-**make worm addition less jarring, currently very jittery**
-"""
-
 #!/usr/bin/python
 
 # This is statement is required by the build system to query build info
